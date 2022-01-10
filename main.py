@@ -8,7 +8,6 @@ from train import train
 
 if __name__ == '__main__':
     # TODO: Add support to Hugging Face's Accelerate Lib
-    # TODO: Put on GitHub
     # TODO: Collect metrics
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str, default='./methods2test/corpus/raw/fm/', help='data directory')

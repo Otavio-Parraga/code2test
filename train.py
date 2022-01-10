@@ -1,5 +1,6 @@
 from evaluation import evaluation
 from utils import dict_to_device
+from pathlib import Path
 import torch
 from metrics import bleu
 
@@ -7,6 +8,8 @@ from metrics import bleu
 def train(model, tokenizer,dataloader, evalloader, epochs, optimizer, device):
     model.to(device)
     model.train()
+    checkpoint_path = Path('./checkpoints/')
+    checkpoint_path.mkdir(exist_ok=True, parents=True)
     for epoch in range(epochs):
         for i, (source, target) in enumerate(dataloader):
             source = dict_to_device(source, device)
@@ -26,13 +29,13 @@ def train(model, tokenizer,dataloader, evalloader, epochs, optimizer, device):
             loss.backward()
             optimizer.step()
 
-            if i % 250 == 0 and i != 0:
-                # TODO: Evaluation is taking too long in my machine
-                preds, gt = evaluation(model, tokenizer, evalloader, device)
-
+            if i % 100 == 0 and i != 0:
                 print('Epoch: {}/{}'.format(epoch + 1, epochs),
                       'Iteration: {}/{}'.format(i + 1, len(dataloader)),
-                      'Loss: {:.4f}'.format(loss.item()),
-                      'BLEU: {}'.format(bleu(preds, gt)))
+                      'Loss: {:.4f}'.format(loss.item()))
 
-                torch.save(model.state_dict(), f'./checkpoints/{i+1}_epoch_{epoch+1}.ckpt')
+            if i % 1000 == 0 and i != 0:
+                # TODO: Evaluation is taking too long in my machine
+                preds, gt = evaluation(model, tokenizer, evalloader, device)
+                torch.save(model.state_dict(), checkpoint_path / f'{i+1}_epoch_{epoch+1}.ckpt')
+                print('BLEU: {}'.format(bleu(preds, gt)))

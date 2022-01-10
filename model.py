@@ -1,10 +1,11 @@
-import os
+from pathlib import Path
 import torch.nn as nn
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, RobertaTokenizer, T5ForConditionalGeneration
 
 
 def load_model_and_tokenizer(model_name, tokenizer_type='roberta'):
-    os.path.makedirs('./pretrained_stuff', exist_ok=True)
+    cache_path = Path('./pretrained_stuff')
+    cache_path.mkdir(exist_ok=True, parents=True)
     if tokenizer_type == 'roberta':
         return T5ForConditionalGeneration.from_pretrained(model_name, cache_dir='./pretrained_stuff'), \
                RobertaTokenizer.from_pretrained(model_name, cache_dir='./pretrained_stuff')

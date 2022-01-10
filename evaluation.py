@@ -21,6 +21,4 @@ def evaluation(model, tokenizer, test_loader, device):
             pred.extend(outputs)
             gt.extend(gts)
 
-            break
-
     return pred, gt
