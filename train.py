@@ -5,15 +5,14 @@ import torch
 from metrics import bleu
 
 
-def train(model, tokenizer,dataloader, evalloader, epochs, optimizer, device):
-    model.to(device)
+
+def train(model, tokenizer,dataloader, evalloader, epochs, optimizer, accelerator):
+    #model.to(device)
     model.train()
     checkpoint_path = Path('./checkpoints/')
     checkpoint_path.mkdir(exist_ok=True, parents=True)
     for epoch in range(epochs):
         for i, (source, target) in enumerate(dataloader):
-            source = dict_to_device(source, device)
-            target = dict_to_device(target, device)
             optimizer.zero_grad()
 
             # replace padding token id's of the labels by -100 ->
@@ -26,7 +25,7 @@ def train(model, tokenizer,dataloader, evalloader, epochs, optimizer, device):
                             labels=labels)
 
             loss = outputs[0]
-            loss.backward()
+            accelerator.backward(loss)
             optimizer.step()
 
             if i % 100 == 0 and i != 0:
@@ -36,6 +35,6 @@ def train(model, tokenizer,dataloader, evalloader, epochs, optimizer, device):
 
             if i % 1000 == 0 and i != 0:
                 # TODO: Evaluation is taking too long in my machine
-                preds, gt = evaluation(model, tokenizer, evalloader, device)
+                preds, gt = evaluation(model, tokenizer, evalloader)
                 torch.save(model.state_dict(), checkpoint_path / f'{i+1}_epoch_{epoch+1}.ckpt')
                 print('BLEU: {}'.format(bleu(preds, gt)))

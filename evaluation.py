@@ -3,13 +3,12 @@ import torch
 from tqdm import tqdm
 
 
-def evaluation(model, tokenizer, test_loader, device):
+def evaluation(model, tokenizer, test_loader):
     model.eval()
     gt = []
     pred = []
     with torch.no_grad():
         for (data, target) in tqdm(test_loader, desc='Evaluation'):
-            data, target = dict_to_device(data, device), dict_to_device(target, device)
             outputs = model.generate(input_ids=data['input_ids'],
                                      attention_mask=data['attention_mask'],
                                      do_sample=True,

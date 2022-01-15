@@ -5,9 +5,9 @@ from dataset import Code2TestDataset
 import argparse
 from model import load_model_and_tokenizer, Code2TestModel
 from train import train
+from accelerate import Accelerator
 
 if __name__ == '__main__':
-    # TODO: Add support to Hugging Face's Accelerate Lib
     # TODO: Collect metrics
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str, default='./methods2test/corpus/raw/fm/', help='data directory')
@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    accelerator = Accelerator()
 
     data_dir = Path(args.data_dir)
 
@@ -36,5 +36,7 @@ if __name__ == '__main__':
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
+    model, optimizer, train_loader, eval_loader, test_loader = accelerator.prepare(model, optimizer, train_loader, eval_loader, test_loader)
+
     print('Training...')
-    train(model, tokenizer, train_loader, eval_loader, 10, optimizer, device)
+    train(model, tokenizer, train_loader, eval_loader, 10, optimizer, accelerator)
