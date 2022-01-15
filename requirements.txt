@@ -1,0 +1,4 @@
+torch==1.10.1+cu102
+transformers
+numpy
+nltk
