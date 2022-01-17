@@ -12,7 +12,7 @@ def evaluation(model, tokenizer, test_loader, device):
             data, target = dict_to_device(data, device), dict_to_device(target, device)
             outputs = model.generate(input_ids=data['input_ids'],
                                      attention_mask=data['attention_mask'],
-                                     do_sample=True,
+                                     do_sample=False,#do_sample=True,
                                      max_length=150,
                                      early_stopping=True)
             outputs = [tokenizer.decode(o, skip_special_tokens=True) for o in outputs]
