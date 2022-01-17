@@ -35,5 +35,5 @@ if __name__ == '__main__':
     #test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
 
     print('Training...')
-    trainer = pl.Trainer(gpus=4, max_epochs=10)#, strategy='ddp')
+    trainer = pl.Trainer(gpus=2, max_epochs=10 strategy='ddp')
     trainer.fit(model, train_loader, eval_loader)

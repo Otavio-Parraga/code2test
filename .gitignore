@@ -2,3 +2,4 @@
 checkpoints/
 pretrained_stuff/
 methods2test/
+lightning_logs/*
