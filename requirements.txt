@@ -1,4 +1,4 @@
-torch==1.10.1+cu102
+torch==1.10.1
 transformers
 numpy
 nltk
