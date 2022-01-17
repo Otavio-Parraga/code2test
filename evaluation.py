@@ -3,12 +3,12 @@ import torch
 from tqdm import tqdm
 
 
-def evaluation(model, tokenizer, test_loader):
+def evaluation(model, tokenizer, test_loader, limitation=None):
     model.eval()
     gt = []
     pred = []
     with torch.no_grad():
-        for (data, target) in tqdm(test_loader, desc='Evaluation'):
+        for i, (data, target) in enumerate(tqdm(test_loader, desc='Evaluation')):
             outputs = model.generate(input_ids=data['input_ids'],
                                      attention_mask=data['attention_mask'],
                                      do_sample=True,
@@ -19,5 +19,8 @@ def evaluation(model, tokenizer, test_loader):
 
             pred.extend(outputs)
             gt.extend(gts)
+
+            if limitation is not None and i == limitation:
+                break
 
     return pred, gt

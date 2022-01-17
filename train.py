@@ -35,6 +35,6 @@ def train(model, tokenizer,dataloader, evalloader, epochs, optimizer, accelerato
 
             if i % 1000 == 0 and i != 0:
                 # TODO: Evaluation is taking too long in my machine
-                preds, gt = evaluation(model, tokenizer, evalloader)
+                preds, gt = evaluation(model, tokenizer, evalloader, limitation=100)
                 torch.save(model.state_dict(), checkpoint_path / f'{i+1}_epoch_{epoch+1}.ckpt')
                 print('BLEU: {}'.format(bleu(preds, gt)))

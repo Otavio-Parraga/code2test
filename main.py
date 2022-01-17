@@ -11,12 +11,12 @@ if __name__ == '__main__':
     # TODO: Collect metrics
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str, default='./methods2test/corpus/raw/fm/', help='data directory')
-    parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--pretrained_model', type=str, default='Salesforce/codet5-small')
 
     args = parser.parse_args()
 
-    accelerator = Accelerator()
+    accelerator = Accelerator(device_placement=True ,split_batches=True)
 
     data_dir = Path(args.data_dir)
 
