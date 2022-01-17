@@ -1,5 +1,7 @@
 from pathlib import Path
+import torch
 import torch.nn as nn
+import pytorch_lightning as pl
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, RobertaTokenizer, T5ForConditionalGeneration
 
 
@@ -14,17 +16,42 @@ def load_model_and_tokenizer(model_name, tokenizer_type='roberta'):
                AutoTokenizer.from_pretrained(model_name, cache_dir='./pretrained_stuff')
 
 
-class Code2TestModel(nn.Module):
+class Code2TestModel(pl.LightningModule):
     def __init__(self, pretrained_model, tokenizer):
         super(Code2TestModel, self).__init__()
         self.pretrained_model = pretrained_model
         self.tokenizer = tokenizer
 
-    def forward(self, source_ids, source_mask, labels):
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)   
+        return optimizer
 
+    def forward(self, source_ids, source_mask, labels):
         return self.pretrained_model(source_ids,
                                      attention_mask=source_mask,
                                      labels=labels)
+
+    def training_step(self, batch, batch_idx):
+        source, target = batch
+        labels = target['input_ids'].clone()
+        labels[labels == self.tokenizer.pad_token_id] = -100
+        outputs = self.forward(source['input_ids'],
+                        source['attention_mask'],
+                        labels=labels)
+        loss = outputs[0]
+        self.log('train_loss', loss)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        source, target = batch
+        labels = target['input_ids'].clone()
+        labels[labels == self.tokenizer.pad_token_id] = -100
+        outputs = self.forward(source['input_ids'],
+                        source['attention_mask'],
+                        labels=labels)
+        loss = outputs[0]
+        self.log('val_loss', loss)
+        return loss
 
     def encode(self, source_ids, source_mask):
         return self.pretrained_model.encoder(source_ids, attention_mask=source_mask)
