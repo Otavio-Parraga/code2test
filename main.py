@@ -1,7 +1,7 @@
 from pathlib import Path
 import torch
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch.utils.data import DataLoader
 from dataset import Code2TestDataset
 import argparse
@@ -9,8 +9,9 @@ from model import load_model_and_tokenizer, Code2TestModel
 from metrics import bleu
 from utils import dict_to_device
 
+
 class BleuCallback(pl.Callback):
-    def __init__(self, dataloader, limit = 50):
+    def __init__(self, dataloader, limit=50):
         self.dataloader = dataloader
         self.limit = limit
 
@@ -25,17 +26,20 @@ class BleuCallback(pl.Callback):
                     break
 
                 source, target = batch
-                source, target = dict_to_device(source, pl_module.device), dict_to_device(target, pl_module.device)
+                source, target = dict_to_device(
+                    source, pl_module.device), dict_to_device(target, pl_module.device)
                 outputs = pl_module.generate(input_ids=source['input_ids'],
-                                    attention_mask=source['attention_mask'],
-                                    do_sample=False,
-                                    early_stopping=True)
-                outputs = [tokenizer.decode(o, skip_special_tokens=True) for o in outputs]
-                gts = [tokenizer.decode(t, skip_special_tokens=True) for t in target['input_ids']]
+                                             attention_mask=source['attention_mask'],
+                                             do_sample=False,
+                                             early_stopping=True)
+                outputs = [tokenizer.decode(
+                    o, skip_special_tokens=True) for o in outputs]
+                gts = [tokenizer.decode(t, skip_special_tokens=True)
+                       for t in target['input_ids']]
 
                 pred.extend(outputs)
                 gt.extend(gts)
-        
+
         bleu_score = bleu(pred, gt)
         trainer.logger.log_metrics({"bleu": bleu_score})
 
@@ -82,11 +86,15 @@ if __name__ == '__main__':
         verbose=True,
         monitor='val_loss')
 
+    early_stop_callback = EarlyStopping('val_loss', patience=3)
+
     bleu_callback = BleuCallback(eval_loader)
 
     print('Training...')
-    trainer = pl.Trainer(gpus=2,
+    trainer = pl.Trainer(gpus=3,
                          max_epochs=10,
-                         callbacks=[checkpoint_callback, bleu_callback],
+                         callbacks=[checkpoint_callback,
+                                    bleu_callback,
+                                    early_stop_callback],
                          strategy='ddp')
     trainer.fit(model, train_loader, eval_loader)
