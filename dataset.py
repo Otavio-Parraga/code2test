@@ -15,11 +15,13 @@ def load_dataset(path):
 
 
 class Code2TestDataset(Dataset):
-    # TODO: enable train with prefix
-    def __init__(self, path, split='train', tokenizer=None):
-        self.path = Path(path / split)
-        self.data, self.labels = load_dataset(self.path)
+    def __init__(self, path, split='train', tokenizer=None, add_prefix=False):
+        self.path = Path(path)
+        self.full_path = self.path / split
+        self.data, self.labels = load_dataset(self.full_path)
         self.tokenizer = tokenizer
+        if add_prefix: 
+            self.data = [f'Code to test: {d}' for d in self.data]
 
     def __len__(self):
         return len(self.data)
