@@ -42,6 +42,7 @@ class BleuCallback(pl.Callback):
 
         bleu_score = bleu(pred, gt)
         trainer.logger.log_metrics({"bleu": bleu_score})
+        pl_module.train()
 
 
 if __name__ == '__main__':
@@ -54,6 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--pretrained_model', type=str,
                         default='Salesforce/codet5-small')
     parser.add_argument('--output_dir', type=str, default='./output/')
+    parser.add_argument('--prefix', action='store_true')
 
     args = parser.parse_args()
 
@@ -67,8 +69,8 @@ if __name__ == '__main__':
     model = Code2TestModel(pretrained_model, tokenizer)
 
     print('Loading Dataset...')
-    train_data = Code2TestDataset(data_dir, 'train', tokenizer)
-    eval_data = Code2TestDataset(data_dir, 'eval', tokenizer)
+    train_data = Code2TestDataset(data_dir, 'train', tokenizer, args.prefix)
+    eval_data = Code2TestDataset(data_dir, 'eval', tokenizer, args.prefix)
     #test_data = Code2TestDataset(data_dir, 'test', tokenizer)
 
     print('Loading DataLoader...')
