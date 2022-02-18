@@ -1,6 +1,5 @@
 from pathlib import Path
-import torch
-import torch.nn as nn
+import torch.optim as optim
 import pytorch_lightning as pl
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, RobertaTokenizer, T5ForConditionalGeneration
 
@@ -23,8 +22,9 @@ class Code2TestModel(pl.LightningModule):
         self.tokenizer = tokenizer
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)   
-        return optimizer
+        optimizer = optim.Adam(self.parameters(), lr=2e-5)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
+        return [optimizer], [scheduler]
 
     def forward(self, source_ids, source_mask, labels):
         return self.pretrained_model(source_ids,

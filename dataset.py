@@ -31,8 +31,8 @@ class Code2TestDataset(Dataset):
         target = self.labels[idx]
 
         if self.tokenizer:
-            source = self.tokenizer(source, padding='max_length', truncation=True, return_tensors='pt')
-            target = self.tokenizer(target, padding='max_length', truncation=True, return_tensors='pt')
+            source = self.tokenizer(source, max_length=128, padding='max_length', truncation=True, return_tensors='pt')
+            target = self.tokenizer(target, max_length=128, padding='max_length', truncation=True, return_tensors='pt')
             source = squeeze_dict(source)
             target = squeeze_dict(target)
 
