@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=1 python main.py --output_dir checkpoints/codet5
+CUDA_VISIBLE_DEVICES=2 python main.py

@@ -3,64 +3,31 @@ import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch.utils.data import DataLoader
+from utils import set_seed
 from dataset import Code2TestDataset
 import argparse
 from model import load_model_and_tokenizer, Code2TestModel
-from metrics import bleu
-from utils import dict_to_device
-
-
-class BleuCallback(pl.Callback):
-    def __init__(self, dataloader, limit=50):
-        self.dataloader = dataloader
-        self.limit = limit
-
-    def on_epoch_start(self, trainer, pl_module):
-        with torch.no_grad():
-            pl_module.eval()
-            bleu_score = 0
-            pred, gt = [], []
-            for i, batch in enumerate(self.dataloader):
-
-                if i >= self.limit:
-                    break
-
-                source, target = batch
-                source, target = dict_to_device(
-                    source, pl_module.device), dict_to_device(target, pl_module.device)
-                outputs = pl_module.generate(input_ids=source['input_ids'],
-                                             attention_mask=source['attention_mask'],
-                                             do_sample=False,
-                                             early_stopping=True)
-                outputs = [tokenizer.decode(
-                    o, skip_special_tokens=True) for o in outputs]
-                gts = [tokenizer.decode(t, skip_special_tokens=True)
-                       for t in target['input_ids']]
-
-                pred.extend(outputs)
-                gt.extend(gts)
-
-        bleu_score = bleu(pred, gt)
-        trainer.logger.log_metrics({"bleu": bleu_score})
-        pl_module.train()
 
 
 if __name__ == '__main__':
-    # TODO: Add support to Hugging Face's Accelerate Lib
-    # TODO: Collect metrics
+    # TODO: Fix actual system for arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str,
                         default='./methods2test/corpus/raw/fm/', help='data directory')
-    parser.add_argument('--batch_size', type=int, default=8)
-    parser.add_argument('--pretrained_model', type=str,
+    parser.add_argument('-ptm','--pretrained_model', type=str,
                         default='Salesforce/codet5-small')
-    parser.add_argument('--output_dir', type=str, default='./output/')
+    parser.add_argument('--output_dir', type=str, default='./checkpoints/')
     parser.add_argument('--prefix', action='store_true')
+    parser.add_argument('--gpus', type=int, default=1)
+    parser.add_argument('-bs', '--batch_size', type=int, default=32)
 
     args = parser.parse_args()
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    set_seed()
 
+    output_dir = Path(args.output_dir) / args.pretrained_model.replace('/', '-')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
     data_dir = Path(args.data_dir)
 
     print('Loading Model and Tokenizer...')
@@ -71,32 +38,27 @@ if __name__ == '__main__':
     print('Loading Dataset...')
     train_data = Code2TestDataset(data_dir, 'train', tokenizer, args.prefix)
     eval_data = Code2TestDataset(data_dir, 'eval', tokenizer, args.prefix)
-    #test_data = Code2TestDataset(data_dir, 'test', tokenizer)
 
     print('Loading DataLoader...')
     train_loader = DataLoader(
         train_data, batch_size=args.batch_size, shuffle=True)
     eval_loader = DataLoader(
         eval_data, batch_size=args.batch_size, shuffle=False)
-    #test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
 
     checkpoint_callback = ModelCheckpoint(
-        dirpath=args.output_dir,
-        filename='model_{epoch}.ckpt',
-        save_top_k=3,
+        dirpath=output_dir,
+        filename='best_model',
+        save_top_k=1,
         save_last=True,
         verbose=True,
         monitor='val_loss')
 
-    early_stop_callback = EarlyStopping('val_loss', patience=3)
-
-    bleu_callback = BleuCallback(eval_loader)
+    early_stop_callback = EarlyStopping('val_loss', patience=2)
 
     print('Training...')
-    trainer = pl.Trainer(gpus=3,
+    trainer = pl.Trainer(gpus=args.gpus,
                          max_epochs=10,
                          callbacks=[checkpoint_callback,
-                                    bleu_callback,
                                     early_stop_callback],
                          strategy='ddp')
     trainer.fit(model, train_loader, eval_loader)
