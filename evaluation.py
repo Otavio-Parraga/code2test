@@ -25,16 +25,16 @@ if __name__ == '__main__':
     model = Code2TestModel.load_from_checkpoint(checkpoint_path=checkpoint_path, pretrained_model=pretrained_model, tokenizer=tokenizer)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dataset = Code2TestDataset(path='./methods2test/corpus/raw/fm/', split='test', tokenizer=tokenizer)
-    dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
+    dataloader = DataLoader(dataset, batch_size=512, shuffle=False)
 
     model.eval()
     model.to(device)
 
     bleu_score, tokenized_bleu_score, alpha_bleu_score = 0, 0, 0
+    preds, ground_truths = [], []
 
     with torch.no_grad():
         for i,batch in enumerate(tqdm(dataloader)):
-            pred, gt = [], []
             source, target = batch
             source, target = dict_to_device(source, device), dict_to_device(target, device)
 
@@ -42,23 +42,24 @@ if __name__ == '__main__':
                                     attention_mask=source['attention_mask'],
                                     do_sample=True, max_length=128)
 
-            outputs = tokenizer.batch_decode(output, skip_special_tokens=True)
-            gts = tokenizer.batch_decode(target['input_ids'], skip_special_tokens=True)
-            output, gts = postprocess_text(outputs, gts)
+            output = tokenizer.batch_decode(output, skip_special_tokens=True)
+            labels = tokenizer.batch_decode(target['input_ids'], skip_special_tokens=True)
+            output, labels = postprocess_text(output, labels)
 
-            pred.extend(outputs)
-            gt.extend(gts)
-            
-            bleu_score += bleu(pred, gts)
-            tokenized_bleu_score += tokenized_bleu(pred, gts, tokenizer)
-            alpha_bleu_score += alpha_bleu(pred, gts)
+            preds.extend(output)
+            ground_truths.extend(labels)
 
-
-            if i % 5 == 0:
-                print(f'BLEU: {bleu_score / (i+1)} CodeBLEU: {tokenized_bleu_score / (i+1)} AlphaBLEU: {alpha_bleu_score / (i+1)}')
+            if i % 5 == 0: 
+                print(f'BLEU: {bleu(preds, ground_truths)} CodeBLEU: {tokenized_bleu(preds, ground_truths, tokenizer)} AlphaBLEU: {alpha_bleu(preds, ground_truths)}')
 
         
-    with open(f'{output_dir}/results.json', 'w') as f:
-        json.dump({'bleu': bleu_score / len(dataloader), 'code_bleu': tokenized_bleu_score / len(dataloader), 'alpha_bleu': alpha_bleu_score / len(dataloader)}, f)
+    with open(output_dir / 'results.json', 'w') as f:
+        json.dump({'bleu': bleu(preds, ground_truths), 'code_bleu': tokenized_bleu(preds, ground_truths, tokenizer), 'alpha_bleu': alpha_bleu(preds, ground_truths)}, f)
+
+    with open(output_dir / 'predictions.txt', 'w') as f:
+        f.write('\n'.join(preds))
+
+    with open(output_dir / 'ground_truths.txt', 'w') as f:
+        f.write('\n'.join(ground_truths))
 
         
