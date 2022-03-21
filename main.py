@@ -20,6 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--prefix', action='store_true')
     parser.add_argument('--gpus', type=int, default=1)
     parser.add_argument('-bs', '--batch_size', type=int, default=32)
+    parser.add_argument('-e', '--epochs', type=int, default=10)
 
     args = parser.parse_args()
 
@@ -33,7 +34,7 @@ if __name__ == '__main__':
     print('Loading Model and Tokenizer...')
     pretrained_model, tokenizer = load_model_and_tokenizer(
         args.pretrained_model)
-    model = Code2TestModel(pretrained_model, tokenizer)
+    model = Code2TestModel(args.pretrained_model, pretrained_model, tokenizer)
 
     print('Loading Dataset...')
     train_data = Code2TestDataset(data_dir, 'train', tokenizer, args.prefix)
@@ -57,7 +58,7 @@ if __name__ == '__main__':
 
     print('Training...')
     trainer = pl.Trainer(gpus=args.gpus,
-                         max_epochs=10,
+                         max_epochs=args.epochs,
                          callbacks=[checkpoint_callback,
                                     early_stop_callback],
                          strategy='ddp')
