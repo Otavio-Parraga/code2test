@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=2,3 python main.py -ptm Salesforce/codet5-base --batch_size 8 --gpus 2
