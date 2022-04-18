@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from utils import set_seed
 from dataset import Code2TestDataset
 import argparse
-from model import load_model_and_tokenizer, Code2TestModel
+from models import load_model_and_tokenizer, Code2TestModel
 
 
 if __name__ == '__main__':
@@ -34,7 +34,6 @@ if __name__ == '__main__':
     print('Loading Model and Tokenizer...')
     pretrained_model, tokenizer = load_model_and_tokenizer(
         args.pretrained_model)
-    model = Code2TestModel(args.pretrained_model, pretrained_model, tokenizer)
 
     print('Loading Dataset...')
     train_data = Code2TestDataset(data_dir, 'train', tokenizer, args.prefix)
@@ -45,6 +44,8 @@ if __name__ == '__main__':
         train_data, batch_size=args.batch_size, shuffle=True)
     eval_loader = DataLoader(
         eval_data, batch_size=args.batch_size, shuffle=False)
+
+    model = Code2TestModel(pretrained_model, tokenizer, train_size=len(train_loader), epochs=args.epochs)
 
     checkpoint_callback = ModelCheckpoint(
         dirpath=output_dir,

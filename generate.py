@@ -1,5 +1,5 @@
 import torch
-from model import Code2TestModel, load_model_and_tokenizer
+from _masters.code2test.models import Code2TestModel, load_model_and_tokenizer
 
 if __name__ == '__main__':
     pretrained_model = 'Salesforce/codet5-small'

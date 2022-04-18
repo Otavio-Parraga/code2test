@@ -1,6 +1,6 @@
 import torch
 from utils import set_seed
-from model import Code2TestModel, load_model_and_tokenizer
+from models import Code2TestModel, load_model_and_tokenizer
 from dataset import Code2TestDataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     pretrained_model, tokenizer = load_model_and_tokenizer(
         pretrained_model_name)
     model = Code2TestModel.load_from_checkpoint(
-        checkpoint_path=checkpoint_path, pretrained_model_name=pretrained_model_name, pretrained_model=pretrained_model, tokenizer=tokenizer)
+        checkpoint_path=checkpoint_path, pretrained_model=pretrained_model, tokenizer=tokenizer)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dataset = Code2TestDataset(
         path='./methods2test/corpus/raw/fm/', split='test', tokenizer=tokenizer)
