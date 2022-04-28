@@ -5,3 +5,7 @@
 
 ## TO run:
 * `python main.py`
+
+## Baselines:
+* For CodeT5 and CodeBERT = base with prefix
+* For GraphCodeBERT = base without prefix
